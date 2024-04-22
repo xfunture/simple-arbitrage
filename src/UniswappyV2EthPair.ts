@@ -21,19 +21,47 @@ interface GroupedMarkets {
   allMarketPairs: Array<UniswappyV2EthPair>;
 }
 
+
+//_tokenBalances 存储的是每个合约中token 的余额
+// 我们可以理解为python中的字典结构
+// key为token string, value为token 的余额
+// 初始化tokenBalance 用的是zipObject,该函数通过两个数组构建tokenBalances
+// 第一个数组是token string 类型的数组，第二个数组长度为2，两个元素都是BigNumber 类型的0
+// BigNumber 打印如下
+// BigNumber { _hex: '0x00', _isBigNumber: true }
+
 export class UniswappyV2EthPair extends EthMarket {
   static uniswapInterface = new Contract(WETH_ADDRESS, UNISWAP_PAIR_ABI);
   private _tokenBalances: TokenBalances
+
+
+  /**
+   * 构造函数
+   * @param marketAddress : string 类型，市场地址，暂时理解为交易合约地址
+   * @param tokens ： Array<string>类型 token数组
+   * @param protocol string类型  类型的协议名称，目前没有找到使用的地方
+   */
 
   constructor(marketAddress: string, tokens: Array<string>, protocol: string) {
     super(marketAddress, tokens, protocol);
     this._tokenBalances = _.zipObject(tokens,[BigNumber.from(0), BigNumber.from(0)])
   }
 
+ /**
+  * 
+  * @param tokenAddress 
+  * @returns 
+  */
   receiveDirectly(tokenAddress: string): boolean {
     return tokenAddress in this._tokenBalances
   }
 
+  /**
+   * 
+   * @param tokenAddress 
+   * @param amountIn 
+   * @returns 
+   */
   async prepareReceive(tokenAddress: string, amountIn: BigNumber): Promise<Array<CallDetails>> {
     if (this._tokenBalances[tokenAddress] === undefined) {
       throw new Error(`Market does not operate on token ${tokenAddress}`)
@@ -45,6 +73,13 @@ export class UniswappyV2EthPair extends EthMarket {
     return []
   }
 
+
+  /**
+   * 
+   * @param provider 
+   * @param factoryAddress 
+   * @returns 
+   */
   static async getUniswappyMarkets(provider: providers.JsonRpcProvider, factoryAddress: string): Promise<Array<UniswappyV2EthPair>> {
     const uniswapQuery = new Contract(UNISWAP_LOOKUP_CONTRACT_ADDRESS, UNISWAP_QUERY_ABI, provider);
 
@@ -76,6 +111,12 @@ export class UniswappyV2EthPair extends EthMarket {
     return marketPairs
   }
 
+  /**
+   * 
+   * @param provider 
+   * @param factoryAddresses 
+   * @returns 
+   */
   static async getUniswapMarketsByToken(provider: providers.JsonRpcProvider, factoryAddresses: Array<string>): Promise<GroupedMarkets> {
     const allPairs = await Promise.all(
       _.map(factoryAddresses, factoryAddress => UniswappyV2EthPair.getUniswappyMarkets(provider, factoryAddress))
@@ -106,6 +147,12 @@ export class UniswappyV2EthPair extends EthMarket {
     }
   }
 
+  /**
+   * 更新资产储备
+   * @param provider 
+   * @param allMarketPairs 
+   */
+
   static async updateReserves(provider: providers.JsonRpcProvider, allMarketPairs: Array<UniswappyV2EthPair>): Promise<void> {
     const uniswapQuery = new Contract(UNISWAP_LOOKUP_CONTRACT_ADDRESS, UNISWAP_QUERY_ABI, provider);
     const pairAddresses = allMarketPairs.map(marketPair => marketPair.marketAddress);
@@ -118,16 +165,30 @@ export class UniswappyV2EthPair extends EthMarket {
     }
   }
 
+  /**
+   * 获取token 余额
+   * @param tokenAddress 
+   * @returns 
+   */
   getBalance(tokenAddress: string): BigNumber {
     const balance = this._tokenBalances[tokenAddress]
     if (balance === undefined) throw new Error("bad token")
     return balance;
   }
 
+  /**
+   * 
+   * @param balances 设置代币的储备，可以理解为代币余额
+   */
   setReservesViaOrderedBalances(balances: Array<BigNumber>): void {
     this.setReservesViaMatchingArray(this._tokens, balances)
   }
 
+  /**
+   * 设置token的余额
+   * @param tokens 
+   * @param balances 
+   */
   setReservesViaMatchingArray(tokens: Array<string>, balances: Array<BigNumber>): void {
     const tokenBalances = _.zipObject(tokens, balances)
     if (!_.isEqual(this._tokenBalances, tokenBalances)) {
@@ -135,24 +196,52 @@ export class UniswappyV2EthPair extends EthMarket {
     }
   }
 
+  /**
+   * 
+   * @param tokenIn 
+   * @param tokenOut 
+   * @param amountOut 
+   * @returns 
+   */
   getTokensIn(tokenIn: string, tokenOut: string, amountOut: BigNumber): BigNumber {
     const reserveIn = this._tokenBalances[tokenIn]
     const reserveOut = this._tokenBalances[tokenOut]
     return this.getAmountIn(reserveIn, reserveOut, amountOut);
   }
 
+  /**
+   * 
+   * @param tokenIn 
+   * @param tokenOut 
+   * @param amountIn 
+   * @returns 
+   */
   getTokensOut(tokenIn: string, tokenOut: string, amountIn: BigNumber): BigNumber {
     const reserveIn = this._tokenBalances[tokenIn]
     const reserveOut = this._tokenBalances[tokenOut]
     return this.getAmountOut(reserveIn, reserveOut, amountIn);
   }
 
+  /**
+   * 
+   * @param reserveIn 
+   * @param reserveOut 
+   * @param amountOut 
+   * @returns 
+   */
   getAmountIn(reserveIn: BigNumber, reserveOut: BigNumber, amountOut: BigNumber): BigNumber {
     const numerator: BigNumber = reserveIn.mul(amountOut).mul(1000);
     const denominator: BigNumber = reserveOut.sub(amountOut).mul(997);
     return numerator.div(denominator).add(1);
   }
 
+  /**
+   * 
+   * @param reserveIn 
+   * @param reserveOut 
+   * @param amountIn 
+   * @returns 
+   */
   getAmountOut(reserveIn: BigNumber, reserveOut: BigNumber, amountIn: BigNumber): BigNumber {
     const amountInWithFee: BigNumber = amountIn.mul(997);
     const numerator = amountInWithFee.mul(reserveOut);
@@ -160,6 +249,13 @@ export class UniswappyV2EthPair extends EthMarket {
     return numerator.div(denominator);
   }
 
+  /**
+   * 
+   * @param tokenIn 
+   * @param amountIn 
+   * @param ethMarket 
+   * @returns 
+   */
   async sellTokensToNextMarket(tokenIn: string, amountIn: BigNumber, ethMarket: EthMarket): Promise<MultipleCallData> {
     if (ethMarket.receiveDirectly(tokenIn) === true) {
       const exchangeCall = await this.sellTokens(tokenIn, amountIn, ethMarket.marketAddress)
@@ -169,6 +265,9 @@ export class UniswappyV2EthPair extends EthMarket {
       }
     }
 
+    /**
+     * 
+     */
     const exchangeCall = await this.sellTokens(tokenIn, amountIn, ethMarket.marketAddress)
     return {
       data: [exchangeCall],
@@ -176,6 +275,13 @@ export class UniswappyV2EthPair extends EthMarket {
     }
   }
 
+  /**
+   * 
+   * @param tokenIn 
+   * @param amountIn 
+   * @param recipient 
+   * @returns 
+   */
   async sellTokens(tokenIn: string, amountIn: BigNumber, recipient: string): Promise<string> {
     // function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external lock {
     let amount0Out = BigNumber.from(0)

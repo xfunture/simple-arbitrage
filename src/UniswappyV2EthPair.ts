@@ -21,14 +21,19 @@ interface GroupedMarkets {
   allMarketPairs: Array<UniswappyV2EthPair>;
 }
 
-
-//_tokenBalances 存储的是每个合约中token 的余额
-// 我们可以理解为python中的字典结构
-// key为token string, value为token 的余额
-// 初始化tokenBalance 用的是zipObject,该函数通过两个数组构建tokenBalances
-// 第一个数组是token string 类型的数组，第二个数组长度为2，两个元素都是BigNumber 类型的0
-// BigNumber 打印如下
-// BigNumber { _hex: '0x00', _isBigNumber: true }
+/** 成员变量
+ * _marketAddress: UniSwapV2 pair address,就是UniswapV2 交易对的地址
+ * _tokens: string类型的数组，存储交易对中的两个交易通证的地址
+ * _protocol: 空字符串
+ * uniswapInterface: WETH contract 
+ * _tokenBalances 字典结构，存储的是每个交易对中每个token 的余额
+ * 我们可以理解为python中的字典结构
+ * key为token string, value为token 的余额
+ * 初始化tokenBalance 用的是zipObject,该函数通过两个数组构建tokenBalances
+ * 第一个数组是token string 类型的数组，第二个数组长度为2，两个元素都是BigNumber 类型的0
+ * BigNumber 打印如下
+ * BigNumber { _hex: '0x00', _isBigNumber: true }
+ */
 
 export class UniswappyV2EthPair extends EthMarket {
   static uniswapInterface = new Contract(WETH_ADDRESS, UNISWAP_PAIR_ABI);
@@ -37,9 +42,9 @@ export class UniswappyV2EthPair extends EthMarket {
 
   /**
    * 构造函数
-   * @param marketAddress : string 类型，市场地址，暂时理解为交易合约地址
-   * @param tokens ： Array<string>类型 token数组
-   * @param protocol string类型  类型的协议名称，目前没有找到使用的地方
+   * @param marketAddress : string 类型，UniSwapV2 pair address,就是UniswapV2 交易对的地址
+   * @param tokens ： Array<string>类型 token数组，存储交易对中的两个交易通证的地址
+   * @param protocol string类型,目前初始化为空字符串
    */
 
   constructor(marketAddress: string, tokens: Array<string>, protocol: string) {
@@ -197,9 +202,10 @@ export class UniswappyV2EthPair extends EthMarket {
   }
 
   /**
-   * 
-   * @param tokenIn 
-   * @param tokenOut 
+   * 根据输入的token address 获取tokenIn 可以获取多少tokenOut
+   * 成员变量_tokenBalances 存储每个交易对中每种token 的储备余额
+   * @param tokenIn :string
+   * @param tokenOut :string
    * @param amountOut 
    * @returns 
    */

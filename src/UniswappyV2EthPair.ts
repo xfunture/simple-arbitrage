@@ -7,8 +7,8 @@ import { ETHER } from "./utils";
 import { MarketsByToken } from "./Arbitrage";
 
 // batch count limit helpful for testing, loading entire set of uniswap markets takes a long time to load
-const BATCH_COUNT_LIMIT = 100;
-const UNISWAP_BATCH_SIZE = 1000
+const BATCH_COUNT_LIMIT = 2;
+const UNISWAP_BATCH_SIZE = 20
 
 // Not necessary, slightly speeds up loading initialization when we know tokens are bad
 // Estimate gas will ensure we aren't submitting bad bundles, but bad tokens waste time

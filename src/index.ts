@@ -49,27 +49,27 @@ function healthcheck() {
 async function main() {
   console.log("Searcher Wallet Address: " + await arbitrageSigningWallet.getAddress())
   console.log("Flashbots Relay Signing Wallet Address: " + await flashbotsRelaySigningWallet.getAddress())
-  // const flashbotsProvider = await FlashbotsBundleProvider.create(provider, flashbotsRelaySigningWallet);
-  // const arbitrage = new Arbitrage(
-  //   arbitrageSigningWallet,
-  //   flashbotsProvider,
-  //   new Contract(BUNDLE_EXECUTOR_ADDRESS, BUNDLE_EXECUTOR_ABI, provider) )
+  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, flashbotsRelaySigningWallet);
+  const arbitrage = new Arbitrage(
+    arbitrageSigningWallet,
+    flashbotsProvider,
+    new Contract(BUNDLE_EXECUTOR_ADDRESS, BUNDLE_EXECUTOR_ABI, provider) )
 
 
-  // cosnst markets = await UniswappyV2EthPair.getUniswapMarketsByToken(provider, FACTORY_ADDRESSES);
+  const markets = await UniswappyV2EthPair.getUniswapMarketsByToken(provider, FACTORY_ADDRESSES);
 
 
 
-  // provider.on('block', async (blockNumber) => {
-  //   await UniswappyV2EthPair.updateReserves(provider, markets.allMarketPairs);
-  //   const bestCrossedMarkets = await arbitrage.evaluateMarkets(markets.marketsByToken);
-  //   if (bestCrossedMarkets.length === 0) {
-  //     console.log("No crossed markets")
-  //     return
-  //   }
-  //   bestCrossedMarkets.forEach(Arbitrage.printCrossedMarket);
-  //   arbitrage.takeCrossedMarkets(bestCrossedMarkets, blockNumber, MINER_REWARD_PERCENTAGE).then(healthcheck).catch(console.error)
-  // })
+  provider.on('block', async (blockNumber) => {
+    await UniswappyV2EthPair.updateReserves(provider, markets.allMarketPairs);
+    const bestCrossedMarkets = await arbitrage.evaluateMarkets(markets.marketsByToken);
+    if (bestCrossedMarkets.length === 0) {
+      console.log("No crossed markets")
+      return
+    }
+    bestCrossedMarkets.forEach(Arbitrage.printCrossedMarket);
+    arbitrage.takeCrossedMarkets(bestCrossedMarkets, blockNumber, MINER_REWARD_PERCENTAGE).then(healthcheck).catch(console.error)
+  })
 }
 
 main();

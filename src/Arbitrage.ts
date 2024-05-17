@@ -34,11 +34,15 @@ export function getBestCrossedMarket(crossedMarkets: Array<EthMarket>[], tokenAd
     const sellToMarket = crossedMarket[0]
     const buyFromMarket = crossedMarket[1]
     for (const size of TEST_VOLUMES) {
-      const tokensOutFromBuyingSize = buyFromMarket.getTokensOut(WETH_ADDRESS, tokenAddress, size);
+      // 通过WETH购买tokenAddress,指定数量size 的WETH，可以获取多少tokenaddress
+      const tokensOutFromBuyingSize = buyFromMarket.getTokensOut(WETH_ADDRESS, tokenAddress, size); 
+      // 卖出tokenAddress,获得WETH,指定数量(tokensOutFromBuyingSize)tokenAddress，可以获取多少WETH
       const proceedsFromSellingTokens = sellToMarket.getTokensOut(tokenAddress, WETH_ADDRESS, tokensOutFromBuyingSize)
+      // 计算获所得利润，卖出tokenAddress获得的WETH数量(proceedsFromSellingTokens) 减去 买入tokenAddress 使用的WETH数量size
       const profit = proceedsFromSellingTokens.sub(size);
       if (bestCrossedMarket !== undefined && profit.lt(bestCrossedMarket.profit)) {
-        // If the next size up lost value, meet halfway. TODO: replace with real binary search
+        // If the next size up lost value, meet halfway. 
+        // TODO: replace with real binary search
         const trySize = size.add(bestCrossedMarket.volume).div(2)
         const tryTokensOutFromBuyingSize = buyFromMarket.getTokensOut(WETH_ADDRESS, tokenAddress, trySize);
         const tryProceedsFromSellingTokens = sellToMarket.getTokensOut(tokenAddress, WETH_ADDRESS, tryTokensOutFromBuyingSize)

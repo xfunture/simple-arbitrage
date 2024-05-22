@@ -1,12 +1,21 @@
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
 import { Contract, providers, Wallet } from "ethers";
 import { BUNDLE_EXECUTOR_ABI } from "./abi";
-import { UniswappyV2EthPair } from "./UniswappyV2EthPair";
+import { UniswappyV2EthPair,GroupedMarkets } from "./UniswappyV2EthPair";
 import { FACTORY_ADDRESSES } from "./addresses";
 import { Arbitrage } from "./Arbitrage";
 import { get } from "https"
 import { getDefaultRelaySigningKey } from "./utils";
 import dotenv from "dotenv";
+
+
+import { MarketsByToken } from "./Arbitrage";
+
+
+interface GroupedMarkets {
+  marketsByToken: MarketsByToken;
+  allMarketPairs: Array<UniswappyV2EthPair>;
+}
 
 dotenv.config();
 

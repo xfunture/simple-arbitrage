@@ -28,11 +28,23 @@ const TEST_VOLUMES = [
   ETHER.mul(10),
 ]
 
+/**
+ * 计算如何获取最大利润
+ * 遍历TEST_VOLUMES,使用不同的WETH数量购买代币，比较获得的利润，找出利润最大化的WETH size
+ * @param crossedMarkets 
+ * @param tokenAddress 
+ * @returns 
+ */
 export function getBestCrossedMarket(crossedMarkets: Array<EthMarket>[], tokenAddress: string): CrossedMarketDetails | undefined {
   let bestCrossedMarket: CrossedMarketDetails | undefined = undefined;
   for (const crossedMarket of crossedMarkets) {
     const sellToMarket = crossedMarket[0]
     const buyFromMarket = crossedMarket[1]
+    //TEST_VOLUMES 指的是购买不同的数量代币
+    // 评估最终可以获得的profit
+    // profit 就是一次买入，一次卖出完成后，前后WETH的数量相减，这就是利润。
+    // 使用不同数量的WEH购买代币，然后卖出，换回WETH获取profit
+    // 比较每个profit的大小，
     for (const size of TEST_VOLUMES) {
       // 通过WETH购买tokenAddress,指定数量size 的WETH，可以获取多少tokenaddress
       const tokensOutFromBuyingSize = buyFromMarket.getTokensOut(WETH_ADDRESS, tokenAddress, size); 
@@ -40,6 +52,9 @@ export function getBestCrossedMarket(crossedMarkets: Array<EthMarket>[], tokenAd
       const proceedsFromSellingTokens = sellToMarket.getTokensOut(tokenAddress, WETH_ADDRESS, tokensOutFromBuyingSize)
       // 计算获所得利润，卖出tokenAddress获得的WETH数量(proceedsFromSellingTokens) 减去 买入tokenAddress 使用的WETH数量size
       const profit = proceedsFromSellingTokens.sub(size);
+
+      // 如果这一次的size 产生的利润少于上一次size 产生的利润
+      // 
       if (bestCrossedMarket !== undefined && profit.lt(bestCrossedMarket.profit)) {
         // If the next size up lost value, meet halfway. 
         // TODO: replace with real binary search

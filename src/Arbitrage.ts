@@ -29,7 +29,7 @@ const TEST_VOLUMES = [
 ]
 
 /**
- * 计算如何获取最大利润
+ * 计算设置不同的本金如何获取最大利润
  * 遍历TEST_VOLUMES,使用不同的WETH数量购买代币，比较获得的利润，找出利润最大化的WETH size
  * @param crossedMarkets 
  * @param tokenAddress 
